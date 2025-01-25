@@ -47,6 +47,7 @@ const App = () => {
       console.error(error);
     } finally {
       setLoading(false);
+      setCity("");
     }
   };
   useEffect(() => {
