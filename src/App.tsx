@@ -1,63 +1,57 @@
 import type React from "react";
 import { useState, useEffect } from "react";
+import WeatherCard from "./WeatherCard";
 
 interface Weather {
   temp: number;
   humidity: number;
   windSpeed: number;
   description: string;
+  icon?: string;
+  city?: string;
 }
 
-function WeatherCard({
-  icon,
-  title,
-  value,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-}) {
-  return (
-    <div className="bg-white rounded-lg shadow-md p-4 flex items-center">
-      <div className="mr-4 text-blue-500">{icon}</div>
-      <div>
-        <p className="text-sm font-medium text-gray-500">{title}</p>
-        <p className="text-lg font-semibold">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-function App() {
-  const [city, setCity] = useState("");
+const App = () => {
+  const [city, setCity] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
   const [weather, setWeather] = useState<Weather | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  console.log(weather);
 
-  useEffect(() => {
-    if (city) {
-      fetchWeather(city);
-    }
-  }, [city]);
-
-  const fetchWeather = async (cityName: string) => {
+  // !the fetching part
+  const fetchWeather = async (city: string) => {
     setLoading(true);
     setError("");
     try {
-      // Replace with actual API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${
+          import.meta.env.VITE_WEATHER_API_KEY
+        }`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch weather data");
+      }
+      const data = await response.json();
+      console.log(data);
       setWeather({
-        temp: 20,
-        humidity: 65,
-        windSpeed: 5,
-        description: "Cloudy",
+        temp: data.main.temp - 273.15,
+        humidity: data.main.humidity,
+        windSpeed: data.wind.speed,
+        description: data.weather[0].description,
+        icon: data.weather[0].icon,
+        city: data.name,
       });
-    } catch (err) {
-      setError("Failed to fetch weather data");
+    } catch (error) {
+      setError((error as Error).message);
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    fetchWeather("New York");
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,123 +61,58 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-blue-300 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
-        <div className="bg-blue-500 text-white p-4">
-          <h1 className="text-2xl font-bold text-center">Weather App</h1>
-        </div>
-        <div className="p-4">
-          <form onSubmit={handleSubmit} className="mb-4">
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                placeholder="Enter city name"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-              >
-                {loading ? "Loading..." : "Search"}
-              </button>
-            </div>
-          </form>
-
-          {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-
-          {weather && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <WeatherCard
-                  icon={
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 12h14M12 5l7 7-7 7"
-                      />
-                    </svg>
-                  }
-                  title="Temperature"
-                  value={`${weather.temp}°C`}
+    <div className="h-screen bg-gradient-to-b from-blue-100 to-blue-300 flex items-center justify-center">
+      {weather ? (
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden ">
+          <div className="bg-blue-500 text-white h-16 flex items-center justify-center">
+            <h1 className="text-2xl font-bold text-center">Weather App</h1>
+          </div>
+          <div className="px-4 py-8">
+            <form onSubmit={handleSubmit} className="mb-4">
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  placeholder="Enter city name"
+                  value={city || ""}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <WeatherCard
-                  icon={
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                      />
-                    </svg>
-                  }
-                  title="Humidity"
-                  value={`${weather.humidity}%`}
-                />
-                <WeatherCard
-                  icon={
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M14 5l7 7m0 0l-7 7m7-7H3"
-                      />
-                    </svg>
-                  }
-                  title="Wind Speed"
-                  value={`${weather.windSpeed} m/s`}
-                />
-                <WeatherCard
-                  icon={
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
-                      />
-                    </svg>
-                  }
-                  title="Description"
-                  value={weather.description}
-                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+                >
+                  {loading ? "Loading..." : "Search"}
+                </button>
               </div>
-            </div>
-          )}
+            </form>
+
+            {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+
+            {/* <WeatherCard icon="default-icon" title="test" value="15" /> */}
+            {weather && (
+              <div className="space-y-4">
+                <div className="flex justify-center">
+                  <WeatherCard weather={weather} />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="w-full max-w-2xl bg-white rounded-lg shadow-xl p-6 space-y-4 animate-pulse">
+          <div className="h-6 bg-gray-300 rounded w-1/3"></div>{" "}
+          {/* Title placeholder */}
+          <div className="h-8 bg-gray-300 rounded w-full"></div>{" "}
+          {/* Input placeholder */}
+          <div className="h-10 bg-blue-300 rounded w-1/4"></div>{" "}
+          {/* Button placeholder */}
+          <div className="h-48 bg-gray-200 rounded"></div>{" "}
+          {/* Weather card skeleton */}
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default App;
