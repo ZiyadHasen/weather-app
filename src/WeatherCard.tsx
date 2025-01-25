@@ -1,5 +1,3 @@
-import React from "react";
-
 interface Weather {
   temp: number;
   humidity: number;
