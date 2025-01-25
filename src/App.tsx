@@ -51,7 +51,7 @@ const App = () => {
     }
   };
   useEffect(() => {
-    fetchWeather("New York");
+    fetchWeather("Addis Ababa");
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
